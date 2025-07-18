@@ -50,3 +50,46 @@
   </script>
 </body>
 </html>
+
+<h2>Upload Documents</h2>
+<form id="uploadForm">
+  <input type="file" id="fileInput" required />
+  <button type="submit">Upload</button>
+</form>
+
+<div id="uploadStatus"></div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const supabase = createClient('https://<your-project-ref>.supabase.co', '<anon-public-key>')
+
+  const form = document.getElementById('uploadForm')
+  const fileInput = document.getElementById('fileInput')
+  const status = document.getElementById('uploadStatus')
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const file = fileInput.files[0]
+    if (!file) return
+
+    const filePath = `${Date.now()}-${file.name}`
+
+    const { data, error } = await supabase.storage.from('documents').upload(filePath, file)
+
+    if (error) {
+      status.textContent = '❌ Upload failed'
+      return
+    }
+
+    const user = await supabase.auth.getUser()
+    await supabase.from('documents').insert({
+      user_id: user.data.user.id,
+      file_name: file.name,
+      file_url: data.path
+    })
+
+    status.textContent = '✅ Uploaded successfully!'
+  })
+</script>
+
