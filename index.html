@@ -1,64 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Smartaxer Login</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-  <h2>Login with Email</h2>
+  <h2>Login via Email</h2>
   <input type="email" id="email" placeholder="Enter your email" />
-  <button onclick="sendOTP()">Send OTP</button>
-
-  <br/><br/>
-  <input type="text" id="otp" placeholder="Enter OTP" />
-  <button onclick="verifyOTP()">Verify OTP</button>
+  <button onclick="login()">Send OTP</button>
 
   <script>
-    const SUPABASE_URL = 'https://bhpvhgkwjqhjyrauagbd.supabase.co'; // 🔁 Replace with your URL
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJocHZoZ2t3anFoanlyYXVhZ2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2OTI0NjIsImV4cCI6MjA2ODI2ODQ2Mn0.9iHLoy7CltIhpBMJdWCQeybMVAHcqTj8-VwEdM6cTSs'; // 🔁 Replace with your anon key
+    const supabaseUrl = 'https://bhpvhgkwjqhjyrauagbd.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJocHZoZ2t3anFoanlyYXVhZ2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2OTI0NjIsImV4cCI6MjA2ODI2ODQ2Mn0.9iHLoy7CltIhpBMJdWCQeybMVAHcqTj8-VwEdM6cTSs';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    async function sendOTP() {
+    async function login() {
       const email = document.getElementById('email').value;
       const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) alert('Error: ' + error.message);
-      else alert('OTP sent to your email');
-    }
-
-    async function verifyOTP() {
-      const email = document.getElementById('email').value;
-      const otp = document.getElementById('otp').value;
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'magiclink', // for simplicity
-      });
 
       if (error) {
-        alert('Login failed: ' + error.message);
-        return;
-      }
-
-      const { user } = data;
-
-      // 🔎 Fetch user role from Supabase
-      const { data: userInfo } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (userInfo?.role === 'user') {
-        window.location.href = 'user-dashboard.html';
-      } else if (userInfo?.role === 'ca') {
-        window.location.href = 'ca-dashboard.html';
+        alert('Error: ' + error.message);
       } else {
-        alert('Unknown role. Contact support.');
+        alert('OTP sent to your email. Please click the link in email to login.');
       }
     }
+
+    // Check if user is already logged in
+    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('email', user.email)
+          .single();
+
+        if (error) {
+          alert('Error getting role: ' + error.message);
+        } else {
+          if (data.role === 'User') {
+            window.location.href = 'user-dashboard.html';
+          } else if (data.role === 'CA') {
+            window.location.href = 'ca-dashboard.html';
+          } else {
+            alert('Unknown role.');
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
