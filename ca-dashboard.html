@@ -10,3 +10,25 @@
   <p>You are now logged in as a Chartered Accountant.</p>
 </body>
 </html>
+<h2>User Documents</h2>
+<ul id="docList"></ul>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const supabase = createClient('https://<your-project-ref>.supabase.co', '<anon-public-key>')
+
+  const docList = document.getElementById('docList')
+
+  const { data, error } = await supabase.from('documents').select('*')
+
+  if (error) {
+    docList.innerHTML = '❌ Failed to load documents'
+  } else {
+    for (const doc of data) {
+      const link = await supabase.storage.from('documents').getPublicUrl(doc.file_url)
+      docList.innerHTML += `<li><a href="${link.data.publicUrl}" target="_blank">${doc.file_name}</a></li>`
+    }
+  }
+</script>
+
